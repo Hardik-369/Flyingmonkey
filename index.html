@@ -1,52 +1,4 @@
-            // Draw bananas
-            bananas.forEach(banana => {
-                if (!banana.collected) {
-                    ctx.fillStyle = '#FFD700';
-                    ctx.beginPath();
-                    ctx.ellipse(banana.x + banana.width/2, banana.y + banana.height/2, 
-                              banana.width/2, banana.height/2 * 0.7, 0, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    // Add banana text
-                    ctx.font = '20px Arial';
-                    ctx.fillText('🍌', banana.x, banana.y + 20);
-                }
-            });
-            
-            // Draw power-ups
-            powerUps.forEach(powerUp => {
-                if (!powerUp.collected) {
-                    if (powerUp.type === 'shield') {
-                        // Shield power-up (blue glow)
-                        ctx.fillStyle = '#00BFFF';
-                        ctx.shadowColor = '#00BFFF';
-                        ctx.shadowBlur = 10;
-                        ctx.beginPath();
-                        ctx.arc(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, powerUp.width/2, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.shadowBlur = 0;
-                        
-                        ctx.font = '16px Arial';
-                        ctx.fillStyle = 'white';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('🛡️', powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2 + 5);
-                    } else if (powerUp.type === 'boost') {
-                        // Boost power-up (orange glow)
-                        ctx.fillStyle = '#FF4500';
-                        ctx.shadowColor = '#FF4500';
-                        ctx.shadowBlur = 10;
-                        ctx.beginPath();
-                        ctx.arc(powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2, powerUp.width/2, 0, Math.PI * 2);
-                        ctx.fill();
-                        ctx.shadowBlur = 0;
-                        
-                        ctx.font = '16px Arial';
-                        ctx.fillStyle = 'white';
-                        ctx.textAlign = 'center';
-                        ctx.fillText('⚡', powerUp.x + powerUp.width/2, powerUp.y + powerUp.height/2 + 5);
-                    }
-                }
-            });<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -149,10 +101,8 @@
             <div id="startScreen" class="screen active">
                 <h1>🐒 Jungle Monkey Swing</h1>
                 <p style="font-size: 1.2em;">Help the monkey swing through the jungle!</p>
-                <p><strong>🎮 SPACE/CLICK:</strong> Jump or Grab Vines</p>
-                <p><strong>🌿 VINE SWINGING:</strong> Click near golden vines to swing!</p>
-                <p><strong>🍌 Bananas:</strong> +5 points | <strong>🛡️ Shield:</strong> 3sec protection</p>
-                <p><strong>⚡ Boost:</strong> Super jump + 20 points</p>
+                <p>Press SPACE or CLICK to swing up</p>
+                <p>Collect 🍌 bananas for bonus points!</p>
                 <button onclick="startGame()">Start Game</button>
             </div>
             
@@ -186,23 +136,12 @@
             gravity: 0.25,
             jumpPower: -6.5,
             maxVelocity: 8,
-            rotation: 0,
-            swingX: 0,
-            swingY: 0,
-            swingAngle: 0,
-            swingRadius: 0
+            rotation: 0
         };
         
         let obstacles = [];
         let bananas = [];
         let gameSpeed = 2;
-        let vines = [];
-        let swingMode = false;
-        let vineSwingTimer = 0;
-        let currentVine = null;
-        let powerUps = [];
-        let shieldActive = false;
-        let shieldTimer = 0;
         
         // Resize canvas to fit window
         function resizeCanvas() {
@@ -222,60 +161,16 @@
             if (e.code === 'Space') {
                 e.preventDefault();
                 if (gameState === 'playing') {
-                    handleJumpOrSwing();
+                    monkey.velocity = monkey.jumpPower;
                 }
             }
         });
         
         canvas.addEventListener('click', () => {
             if (gameState === 'playing') {
-                handleJumpOrSwing();
+                monkey.velocity = monkey.jumpPower;
             }
         });
-        
-        function handleJumpOrSwing() {
-            if (swingMode && currentVine) {
-                // Release from vine
-                const swingForce = Math.sin(monkey.swingAngle) * 8;
-                monkey.velocity = -4 + swingForce;
-                monkey.x += Math.cos(monkey.swingAngle) * 3;
-                swingMode = false;
-                currentVine = null;
-            } else {
-                // Check if near a vine
-                let nearVine = null;
-                vines.forEach(vine => {
-                    const distance = Math.sqrt(
-                        Math.pow(monkey.x + monkey.width/2 - vine.x, 2) + 
-                        Math.pow(monkey.y + monkey.height/2 - vine.topY, 2)
-                    );
-                    if (distance < 60 && !nearVine) {
-                        nearVine = vine;
-                    }
-                });
-                
-                if (nearVine) {
-                    // Start swinging
-                    swingMode = true;
-                    currentVine = nearVine;
-                    monkey.swingX = nearVine.x;
-                    monkey.swingY = nearVine.topY;
-                    monkey.swingRadius = Math.sqrt(
-                        Math.pow(monkey.x + monkey.width/2 - nearVine.x, 2) + 
-                        Math.pow(monkey.y + monkey.height/2 - nearVine.topY, 2)
-                    );
-                    monkey.swingAngle = Math.atan2(
-                        monkey.y + monkey.height/2 - nearVine.topY,
-                        monkey.x + monkey.width/2 - nearVine.x
-                    );
-                    vineSwingTimer = 0;
-                    monkey.velocity = 0;
-                } else {
-                    // Normal jump
-                    monkey.velocity = monkey.jumpPower;
-                }
-            }
-        }
         
         // Game functions
         function startGame() {
@@ -287,12 +182,6 @@
             monkey.rotation = 0;
             obstacles = [];
             bananas = [];
-            vines = [];
-            powerUps = [];
-            swingMode = false;
-            currentVine = null;
-            shieldActive = false;
-            shieldTimer = 0;
             gameSpeed = 2;
             
             startScreen.classList.remove('active');
@@ -311,9 +200,9 @@
         }
         
         function createObstacle() {
-            const gapSize = 180;
-            const minHeight = 80;
-            const maxHeight = canvas.height - gapSize - 80;
+            const gapSize = 180; // Much larger gap for easier passage
+            const minHeight = 80; // Minimum pipe height
+            const maxHeight = canvas.height - gapSize - 80; // Maximum top pipe height
             const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
             
             obstacles.push({
@@ -335,70 +224,22 @@
                     collected: false
                 });
             }
-            
-            // 15% chance to spawn a vine
-            if (Math.random() < 0.15) {
-                vines.push({
-                    x: canvas.width - 30,
-                    topY: topHeight + 20,
-                    length: gapSize - 40,
-                    used: false
-                });
-            }
-            
-            // 8% chance to spawn a power-up
-            if (Math.random() < 0.08) {
-                const powerUpType = Math.random() < 0.5 ? 'shield' : 'boost';
-                powerUps.push({
-                    x: canvas.width + 40,
-                    y: topHeight + gapSize / 2 - 20,
-                    width: 25,
-                    height: 25,
-                    type: powerUpType,
-                    collected: false
-                });
-            }
         }
         
         function updateMonkey() {
-            if (swingMode && currentVine) {
-                // Vine swinging physics
-                vineSwingTimer += 0.1;
-                monkey.swingAngle += 0.08; // Swing speed
-                
-                // Calculate position on vine arc
-                monkey.x = monkey.swingX + Math.cos(monkey.swingAngle) * monkey.swingRadius - monkey.width/2;
-                monkey.y = monkey.swingY + Math.sin(monkey.swingAngle) * monkey.swingRadius - monkey.height/2;
-                
-                // Auto-release after swinging past vertical
-                if (vineSwingTimer > 2 || monkey.swingAngle > Math.PI/6) {
-                    const swingForce = Math.sin(monkey.swingAngle) * 6;
-                    monkey.velocity = -3 + swingForce;
-                    monkey.x += Math.cos(monkey.swingAngle) * 2;
-                    swingMode = false;
-                    currentVine = null;
-                }
-                
-                monkey.rotation = monkey.swingAngle;
-            } else {
-                // Normal physics
-                monkey.velocity += monkey.gravity;
-                
-                if (monkey.velocity > monkey.maxVelocity) {
-                    monkey.velocity = monkey.maxVelocity;
-                }
-                
-                monkey.y += monkey.velocity;
-                monkey.rotation = Math.min(monkey.velocity * 3, 45) * Math.PI / 180;
+            // Apply gravity (like Flappy Bird)
+            monkey.velocity += monkey.gravity;
+            
+            // Cap the velocity to prevent too fast falling
+            if (monkey.velocity > monkey.maxVelocity) {
+                monkey.velocity = monkey.maxVelocity;
             }
             
-            // Handle shield power-up
-            if (shieldActive) {
-                shieldTimer -= 16; // Approximately 60fps
-                if (shieldTimer <= 0) {
-                    shieldActive = false;
-                }
-            }
+            // Update position
+            monkey.y += monkey.velocity;
+            
+            // Calculate rotation based on velocity (like Flappy Bird)
+            monkey.rotation = Math.min(monkey.velocity * 3, 45) * Math.PI / 180;
             
             // Boundary checks
             if (monkey.y < 0) {
@@ -406,13 +247,8 @@
                 monkey.velocity = 0;
             }
             if (monkey.y + monkey.height > canvas.height) {
-                if (!shieldActive) {
-                    monkey.y = canvas.height - monkey.height;
-                    endGame();
-                } else {
-                    monkey.y = canvas.height - monkey.height;
-                    monkey.velocity = monkey.jumpPower; // Bounce back up
-                }
+                monkey.y = canvas.height - monkey.height;
+                endGame();
             }
         }
         
@@ -447,42 +283,30 @@
             bananas = bananas.filter(banana => banana.x + banana.width > -30 && !banana.collected);
         }
         
-        function updateVines() {
-            vines.forEach(vine => {
-                vine.x -= gameSpeed;
-            });
-            
-            // Remove off-screen vines
-            vines = vines.filter(vine => vine.x > -50);
-        }
-        
-        function updatePowerUps() {
-            powerUps.forEach(powerUp => {
-                powerUp.x -= gameSpeed;
-                powerUp.y += Math.sin(Date.now() * 0.005 + powerUp.x * 0.01) * 0.5; // Floating effect
-            });
-            
-            // Remove off-screen power-ups
-            powerUps = powerUps.filter(powerUp => powerUp.x + powerUp.width > -30 && !powerUp.collected);
-        }
-        
         function checkCollisions() {
-            // Check obstacle collisions (unless shield is active)
-            if (!shieldActive) {
-                obstacles.forEach(obstacle => {
-                    const monkeyHitboxMargin = 5;
-                    const monkeyLeft = monkey.x + monkeyHitboxMargin;
-                    const monkeyRight = monkey.x + monkey.width - monkeyHitboxMargin;
-                    const monkeyTop = monkey.y + monkeyHitboxMargin;
-                    const monkeyBottom = monkey.y + monkey.height - monkeyHitboxMargin;
-                    
-                    if (monkeyLeft < obstacle.x + obstacle.width &&
-                        monkeyRight > obstacle.x &&
-                        (monkeyTop < obstacle.topHeight || monkeyBottom > obstacle.bottomY)) {
-                        endGame();
-                    }
-                });
-            }
+            // Check obstacle collisions with more forgiving hitbox
+            obstacles.forEach(obstacle => {
+                // Use slightly smaller hitbox for more forgiving gameplay
+                const monkeyHitboxMargin = 5;
+                const monkeyLeft = monkey.x + monkeyHitboxMargin;
+                const monkeyRight = monkey.x + monkey.width - monkeyHitboxMargin;
+                const monkeyTop = monkey.y + monkeyHitboxMargin;
+                const monkeyBottom = monkey.y + monkey.height - monkeyHitboxMargin;
+                
+                // Top obstacle
+                if (monkeyLeft < obstacle.x + obstacle.width &&
+                    monkeyRight > obstacle.x &&
+                    monkeyTop < obstacle.topHeight) {
+                    endGame();
+                }
+                
+                // Bottom obstacle
+                if (monkeyLeft < obstacle.x + obstacle.width &&
+                    monkeyRight > obstacle.x &&
+                    monkeyBottom > obstacle.bottomY) {
+                    endGame();
+                }
+            });
             
             // Check banana collisions
             bananas.forEach(banana => {
@@ -492,27 +316,7 @@
                     monkey.y < banana.y + banana.height &&
                     monkey.y + monkey.height > banana.y) {
                     banana.collected = true;
-                    score += 5;
-                    scoreElement.textContent = `Score: ${score}`;
-                }
-            });
-            
-            // Check power-up collisions
-            powerUps.forEach(powerUp => {
-                if (!powerUp.collected &&
-                    monkey.x < powerUp.x + powerUp.width &&
-                    monkey.x + monkey.width > powerUp.x &&
-                    monkey.y < powerUp.y + powerUp.height &&
-                    monkey.y + monkey.height > powerUp.y) {
-                    powerUp.collected = true;
-                    
-                    if (powerUp.type === 'shield') {
-                        shieldActive = true;
-                        shieldTimer = 3000; // 3 seconds
-                    } else if (powerUp.type === 'boost') {
-                        score += 20;
-                        monkey.velocity = monkey.jumpPower * 1.5; // Super jump
-                    }
+                    score += 5; // Reduced bonus to balance scoring
                     scoreElement.textContent = `Score: ${score}`;
                 }
             });
@@ -561,64 +365,25 @@
                 ctx.fillRect(obstacle.x - 10, obstacle.bottomY, obstacle.width + 20, 20);
             });
             
-            // Draw vines
-            vines.forEach(vine => {
-                // Draw vine rope
-                ctx.strokeStyle = '#8B4513';
-                ctx.lineWidth = 4;
-                ctx.beginPath();
-                ctx.moveTo(vine.x, vine.topY);
-                ctx.lineTo(vine.x, vine.topY + vine.length);
-                ctx.stroke();
-                
-                // Draw vine leaves at top
-                ctx.fillStyle = '#228B22';
-                ctx.fillRect(vine.x - 8, vine.topY - 5, 16, 10);
-                
-                // Highlight if monkey is near
-                const distance = Math.sqrt(
-                    Math.pow(monkey.x + monkey.width/2 - vine.x, 2) + 
-                    Math.pow(monkey.y + monkey.height/2 - vine.topY, 2)
-                );
-                if (distance < 60) {
-                    ctx.strokeStyle = '#FFD700';
-                    ctx.lineWidth = 6;
-                    ctx.globalAlpha = 0.7;
+            // Draw bananas
+            bananas.forEach(banana => {
+                if (!banana.collected) {
+                    ctx.fillStyle = '#FFD700';
                     ctx.beginPath();
-                    ctx.moveTo(vine.x, vine.topY);
-                    ctx.lineTo(vine.x, vine.topY + vine.length);
-                    ctx.stroke();
-                    ctx.globalAlpha = 1;
+                    ctx.ellipse(banana.x + banana.width/2, banana.y + banana.height/2, 
+                              banana.width/2, banana.height/2 * 0.7, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Add banana text
+                    ctx.font = '20px Arial';
+                    ctx.fillText('🍌', banana.x, banana.y + 20);
                 }
             });
             
-            // Draw swing rope if swinging
-            if (swingMode && currentVine) {
-                ctx.strokeStyle = '#FFD700';
-                ctx.lineWidth = 3;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.moveTo(currentVine.x, currentVine.topY);
-                ctx.lineTo(monkey.x + monkey.width/2, monkey.y + monkey.height/2);
-                ctx.stroke();
-                ctx.setLineDash([]);
-            }
-            
-            // Draw monkey with rotation and shield effect
+            // Draw monkey with rotation (like Flappy Bird)
             ctx.save();
             ctx.translate(monkey.x + monkey.width/2, monkey.y + monkey.height/2);
             ctx.rotate(monkey.rotation);
-            
-            // Draw shield if active
-            if (shieldActive) {
-                ctx.strokeStyle = '#00BFFF';
-                ctx.lineWidth = 4;
-                ctx.setLineDash([5, 5]);
-                ctx.beginPath();
-                ctx.arc(0, 0, monkey.width/2 + 10, 0, Math.PI * 2);
-                ctx.stroke();
-                ctx.setLineDash([]);
-            }
             
             // Draw monkey body
             ctx.fillStyle = '#8B4513';
@@ -626,7 +391,7 @@
             ctx.arc(0, 0, monkey.width/2, 0, Math.PI * 2);
             ctx.fill();
             
-            // Draw monkey face
+            // Draw monkey face (adjust position for rotation)
             ctx.font = '30px Arial';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
@@ -651,8 +416,6 @@
             updateMonkey();
             updateObstacles();
             updateBananas();
-            updateVines();
-            updatePowerUps();
             checkCollisions();
             draw();
             
